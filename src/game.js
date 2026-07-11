@@ -1,10 +1,10 @@
 import Matter from 'matter-js'
 import { AudioManager } from './audio.js'
 import { config } from './config.js'
-import { getRandomItemType } from './items.js'
+import { createItemBody, getRandomItemType } from './items.js'
 import { PhysicsWorld } from './physics.js'
 
-const { Bodies, Body, Events, Vector } = Matter
+const { Body, Events, Vector } = Matter
 
 export class Game {
   constructor(ui) {
@@ -55,13 +55,17 @@ export class Game {
     const size = config.itemBaseSize * this.randomSizeMultiplier()
     const itemType = getRandomItemType()
     const x = Math.max(size / 2, Math.min(window.innerWidth / 2, window.innerWidth - size / 2))
-    this.currentItem = Bodies.rectangle(x, config.spawnHeight, size, size, {
-      label: 'falling-item',
-      density: config.itemDensity,
-      friction: config.itemFriction,
-      restitution: config.itemRestitution,
-      chamfer: { radius: size * 0.12 },
-      render: this.getItemRender(itemType, size),
+    this.currentItem = createItemBody(itemType, {
+      x,
+      y: config.spawnHeight,
+      size,
+      options: {
+        label: 'falling-item',
+        density: config.itemDensity,
+        friction: config.itemFriction,
+        restitution: config.itemRestitution,
+        render: this.getItemRender(itemType, size),
+      },
     })
     this.currentItem.gameSize = size
     this.currentItem.itemType = itemType
@@ -186,6 +190,7 @@ export class Game {
         texture: itemType.texture,
         xScale: size / 120,
         yScale: size / 120,
+        yOffset: itemType.collider.spriteYOffset,
       },
     }
   }
