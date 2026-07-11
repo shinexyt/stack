@@ -1,5 +1,7 @@
 import Matter from 'matter-js'
+import { AudioManager } from './audio.js'
 import { config } from './config.js'
+import { getRandomItemType } from './items.js'
 import { PhysicsWorld } from './physics.js'
 
 const { Bodies, Body, Events, Vector } = Matter
@@ -8,6 +10,7 @@ export class Game {
   constructor(ui) {
     this.ui = ui
     this.physics = new PhysicsWorld(ui.world)
+    this.audio = new AudioManager()
     this.currentItem = null
     this.placedItems = []
     this.score = 0
@@ -15,9 +18,14 @@ export class Game {
     this.state = 'ready'
     this.spawnTimeout = null
     this.settleTimeout = null
+    this.cameraY = 0
+    this.slowMotionTimeout = null
 
     Events.on(this.physics.engine, 'beforeUpdate', () => this.moveCurrentItem())
-    Events.on(this.physics.engine, 'afterUpdate', () => this.checkForCollapse())
+    Events.on(this.physics.engine, 'afterUpdate', () => {
+      this.updateCamera()
+      this.checkForCollapse()
+    })
   }
 
   start() {
@@ -27,11 +35,14 @@ export class Game {
   restart() {
     window.clearTimeout(this.spawnTimeout)
     window.clearTimeout(this.settleTimeout)
+    window.clearTimeout(this.slowMotionTimeout)
     this.physics.reset()
     this.currentItem = null
     this.placedItems = []
     this.score = 0
     this.direction = 1
+    this.cameraY = 0
+    this.physics.engine.timing.timeScale = 1
     this.state = 'playing'
     this.ui.updateScore(this.score)
     this.ui.hideGameOver()
@@ -42,6 +53,7 @@ export class Game {
     if (this.state !== 'playing') return
 
     const size = config.itemBaseSize * this.randomSizeMultiplier()
+    const itemType = getRandomItemType()
     const x = Math.max(size / 2, Math.min(window.innerWidth / 2, window.innerWidth - size / 2))
     this.currentItem = Bodies.rectangle(x, config.spawnHeight, size, size, {
       label: 'falling-item',
@@ -49,9 +61,10 @@ export class Game {
       friction: config.itemFriction,
       restitution: config.itemRestitution,
       chamfer: { radius: size * 0.12 },
-      render: { fillStyle: this.randomColor() },
+      render: this.getItemRender(itemType, size),
     })
     this.currentItem.gameSize = size
+    this.currentItem.itemType = itemType
     Body.setStatic(this.currentItem, true)
     this.physics.addItem(this.currentItem)
     this.ui.showHint('点击屏幕，让它落下！')
@@ -74,6 +87,8 @@ export class Game {
       this.currentItem = null
       this.score += 1
       this.ui.updateScore(this.score)
+      this.audio.playLanding()
+      this.ui.shake(config.screenShakeIntensity / 2, config.screenShakeDuration)
       this.spawnTimeout = window.setTimeout(() => this.spawnItem(), config.nextItemDelay)
       return
     }
@@ -127,7 +142,7 @@ export class Game {
       return (
         x < -config.fallOutMargin ||
         x > window.innerWidth + config.fallOutMargin ||
-        y > window.innerHeight + config.fallOutMargin
+        y > this.physics.getViewportBounds().max.y + config.fallOutMargin
       )
     })
 
@@ -142,14 +157,41 @@ export class Game {
     window.clearTimeout(this.settleTimeout)
     this.currentItem = null
     this.ui.hideHint()
+    this.physics.engine.timing.timeScale = config.slowMotionScale
+    this.audio.playCollapse()
+    this.ui.shake(config.screenShakeIntensity, config.screenShakeDuration)
+    this.slowMotionTimeout = window.setTimeout(() => {
+      this.physics.engine.timing.timeScale = 1
+    }, config.slowMotionDuration)
     window.setTimeout(() => this.ui.showGameOver(this.score), config.gameOverDelay)
+  }
+
+  updateCamera() {
+    if (this.state !== 'playing') return
+
+    const items = [...this.placedItems, this.currentItem].filter(Boolean)
+    if (!items.length) return
+
+    const towerTop = Math.min(...items.map((item) => item.bounds.min.y))
+    const targetY = Math.min(0, towerTop - config.cameraTopOffset)
+    this.cameraY += (targetY - this.cameraY) * config.cameraFollowSpeed
+    this.physics.setCameraY(this.cameraY)
+  }
+
+  getItemRender(itemType, size) {
+    if (config.usePlaceholderArt) return { fillStyle: itemType.color }
+
+    return {
+      sprite: {
+        texture: itemType.texture,
+        xScale: size / 120,
+        yScale: size / 120,
+      },
+    }
   }
 
   randomSizeMultiplier() {
     return 1 + (Math.random() * 2 - 1) * config.itemSizeVariance
   }
 
-  randomColor() {
-    return config.itemColors[Math.floor(Math.random() * config.itemColors.length)]
-  }
 }

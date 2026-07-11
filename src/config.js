@@ -28,7 +28,7 @@ export const config = {
   masterVolume: 0.8,
   sfxVolume: 1.0,
   showColliders: false,
-  usePlaceholderArt: true,
+  usePlaceholderArt: false,
 
   groundHeight: 54,
   wallThickness: 80,

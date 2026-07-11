@@ -31,6 +31,10 @@ button {
   background: linear-gradient(#bfe9ff 0%, #fff7ed 67%);
 }
 
+.game-shell.is-shaking {
+  animation: shake 70ms linear 4;
+}
+
 #game-world {
   position: absolute;
   inset: 0;
@@ -144,6 +148,12 @@ button {
 .game-over button:active {
   box-shadow: 1px 2px 0 #35251e;
   transform: translate(2px, 2px);
+}
+
+@keyframes shake {
+  0%, 100% { transform: translate(0); }
+  25% { transform: translate(var(--shake-distance), calc(var(--shake-distance) * -0.45)); }
+  75% { transform: translate(calc(var(--shake-distance) * -1), calc(var(--shake-distance) * 0.45)); }
 }
 
 @media (max-width: 480px) {

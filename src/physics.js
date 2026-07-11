@@ -57,7 +57,20 @@ export class PhysicsWorld {
 
   reset() {
     Composite.clear(this.engine.world, false)
+    this.setCameraY(0)
     this.createBounds()
+  }
+
+  setCameraY(y) {
+    const { width, height } = this.render.options
+    this.render.bounds.min.x = 0
+    this.render.bounds.max.x = width
+    this.render.bounds.min.y = y
+    this.render.bounds.max.y = y + height
+  }
+
+  getViewportBounds() {
+    return this.render.bounds
   }
 
   destroy() {
