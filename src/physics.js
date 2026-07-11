@@ -35,12 +35,12 @@ export class PhysicsWorld {
       Bodies.rectangle(
         width / 2,
         groundY,
-        width + config.wallThickness * 2,
+        width,
         config.groundHeight,
         {
-        isStatic: true,
-        label: 'ground',
-        render: { fillStyle: '#553c2e' },
+          isStatic: true,
+          label: 'ground',
+          render: { fillStyle: '#553c2e' },
         },
       ),
     ]
