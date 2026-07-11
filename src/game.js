@@ -177,7 +177,7 @@ export class Game {
     if (!items.length) return
 
     const towerTop = Math.min(...items.map((item) => item.bounds.min.y))
-    const targetY = Math.min(0, towerTop - config.cameraTopOffset)
+    const targetY = towerTop < 0 ? towerTop - config.cameraTopOffset : 0
     this.cameraY += (targetY - this.cameraY) * config.cameraFollowSpeed
     this.physics.setCameraY(this.cameraY)
   }

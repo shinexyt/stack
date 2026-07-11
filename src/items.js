@@ -1,6 +1,6 @@
 import Matter from 'matter-js'
 
-const { Bodies } = Matter
+const { Bodies, Body } = Matter
 
 export const itemTypes = [
   {
@@ -19,7 +19,7 @@ export const itemTypes = [
     name: '企鹅',
     texture: '/assets/items/penguin.svg',
     color: '#31445c',
-    collider: { type: 'polygon', sides: 12, radius: 0.37, spriteYOffset: 0.57, description: '椭圆身体，使用 12 边形近似' },
+    collider: { type: 'polygon', sides: 12, radius: 0.37, width: 0.72, height: 0.86, spriteYOffset: 0.57, description: '高于宽度的椭圆身体，使用纵向 12 边形近似' },
   },
   {
     name: '沙发',
@@ -53,7 +53,15 @@ export function createItemBody(itemType, { x, y, size, options }) {
   }
 
   if (collider.type === 'polygon') {
-    return Bodies.polygon(x, y, collider.sides, size * collider.radius, options)
+    const body = Bodies.polygon(x, y, collider.sides, size * collider.radius, options)
+
+    if (collider.width && collider.height) {
+      const width = body.bounds.max.x - body.bounds.min.x
+      const height = body.bounds.max.y - body.bounds.min.y
+      Body.scale(body, (size * collider.width) / width, (size * collider.height) / height)
+    }
+
+    return body
   }
 
   return Bodies.rectangle(x, y, size * collider.width, size * collider.height, {
