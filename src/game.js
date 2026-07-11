@@ -45,7 +45,6 @@ export class Game {
     const x = Math.max(size / 2, Math.min(window.innerWidth / 2, window.innerWidth - size / 2))
     this.currentItem = Bodies.rectangle(x, config.spawnHeight, size, size, {
       label: 'falling-item',
-      isStatic: true,
       density: config.itemDensity,
       friction: config.itemFriction,
       restitution: config.itemRestitution,
@@ -53,6 +52,7 @@ export class Game {
       render: { fillStyle: this.randomColor() },
     })
     this.currentItem.gameSize = size
+    Body.setStatic(this.currentItem, true)
     this.physics.addItem(this.currentItem)
     this.ui.showHint('点击屏幕，让它落下！')
   }
